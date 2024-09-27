@@ -61,7 +61,7 @@ func main() {
 				os.Exit(0)
 			}
 			if os.Args[3] == "-w" || os.Args[3] == "--wordlist"{
-				if len(os.Args) <= 5 || os.Args[4] == ""{
+				if len(os.Args) <= 4 || os.Args[4] == ""{
 					fmt.Println(Red,"NO WORDLIST DETECTED",Reset)
 					os.Exit(0)
 				}
