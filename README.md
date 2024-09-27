@@ -23,7 +23,7 @@ The gohunter is a simple command-line application written in Go that scans a tar
 ### Install using Go 
 
 ```bash
-  go install https://github.com/DaddyUchiha/gohunter@latest
+  go install https://github.com/DaddyUchiha/gohunter/cmd@latest
 ```
 
 #### [ OR ]
@@ -37,7 +37,7 @@ cd gohunter
 #### Build the project
 
 ```bash
-go build -o gohunter main.go
+go build -o gohunter gohunter.go
 ```
 
 #### Run the tool:
