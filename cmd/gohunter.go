@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	"github.com/DaddyUchiha/gohunter/cmd/gohunter.go"
 )
 
 const (
