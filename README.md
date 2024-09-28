@@ -37,7 +37,7 @@ cd gohunter
 #### Build the project
 
 ```bash
-go build -o gohunter gohunter.go
+go build -o gohunter main.go
 ```
 
 #### Run the tool:
