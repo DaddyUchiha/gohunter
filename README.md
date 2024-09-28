@@ -1,5 +1,5 @@
 GoHunter
-
+-----------------------------------------------------------------------------------------------------------------------------
 
 The gohunter is a simple command-line application written in Go that scans a target URL for various directories using a wordlist. This tool is useful for penetration testers and security professionals who want to discover hidden directories or endpoints on web servers. The tool supports various options, including:
 
