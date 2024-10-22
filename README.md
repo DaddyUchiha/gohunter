@@ -43,7 +43,7 @@ go build -o gohunter main.go
 #### Run the tool:
 
 ```bash
-./gohunter -u <https://example.com> -d <delay_time> -o <Output> -w <Wordlist Path>  
+gohunter -u <https://example.com> -d <delay_time> -o <Output> -w <Wordlist Path>  
 ```
 
 
