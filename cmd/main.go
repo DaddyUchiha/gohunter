@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"sync"
@@ -11,445 +12,170 @@ import (
 )
 
 const (
-    Reset  = "\033[0m"
-    Red    = "\033[31m"
-    Green  = "\033[32m"
-    Yellow = "\033[33m"
-    Blue   = "\033[34m"
-    Purple = "\033[35m"
-    Cyan   = "\033[36m"
-    White  = "\033[37m"
-	Bold   = "\033[1m"
+	Reset      = "\033[0m"
+	Red        = "\033[31m"
+	Green      = "\033[32m"
+	Yellow     = "\033[33m"
+	Blue       = "\033[34m"
+	Purple     = "\033[35m"
+	Cyan       = "\033[36m"
+	Bold       = "\033[1m"
 	Underlined = "\033[4m"
 )
 
-
-func help() {
-	fmt.Println(Red,"Usage: gohunter -u <https://example.com> -d <delay_time> -o <Output> -w <Wordlist Path>",Reset)
-	fmt.Println("-u --url      Target URL")
-	fmt.Println("-d --delay    Delay between Requests")
-	fmt.Println("-o --Output   Save results to File")
-	fmt.Println("-h --help     Show help Menu")
-	fmt.Println("-w --wordlist Wordlist Path")
+func printHelp() {
+	fmt.Println(Red, "Usage: gohunter -u <https://example.com> -d <delay_time> -o <Output> -w <Wordlist Path>", Reset)
+	fmt.Println("-u, --url      Target URL")
+	fmt.Println("-d, --delay    Delay between requests (seconds)")
+	fmt.Println("-o, --output   Save results to a file")
+	fmt.Println("-h, --help     Show this help menu")
+	fmt.Println("-w, --wordlist Path to the wordlist")
 }
 
-//==============================================================================================================================================================================================================
+func validateArgs(requiredArgs int, errorMessage string) {
+	if len(os.Args) < requiredArgs {
+		fmt.Println(Red, errorMessage, Reset)
+		os.Exit(1)
+	}
+}
 
 func main() {
 	var wg sync.WaitGroup
 
+	fmt.Println(Red,"///////////////////////////////////////////////////////////////////////////////////",Reset)
+        fmt.Println("===================================================================================")
+        fmt.Println(Yellow,Bold,"                               DIRECTORY FINDER                                  ",Reset)
+        fmt.Println("===================================================================================")
+        fmt.Println(Red,"///////////////////////////////////////////////////////////////////////////////////",Reset)
+        fmt.Println("")
+
 	if len(os.Args) < 2 {
-		fmt.Println(Red,"Usage: gohunter -h",Reset)
-		fmt.Println(Red,"Usage: gohunter -u <https://example.com> -w <Wordlist>",Reset)
-		os.Exit(0)
-	}
-	if len(os.Args) <= 3 {
-		fmt.Println(Red,"Usage: gohunter -u <https://example.com> -w <Wordlist>",Reset)
-		os.Exit(0)
-	}
-
-	if os.Args[1] == "--help" || os.Args[1] == "-h" {
-		help()
-		return
-	}
-
-	if len(os.Args) <= 5 {
-		if os.Args[1] == "-u" || os.Args[1] == "--url" {
-			if len(os.Args) <= 2 || os.Args[2] == "" {
-				fmt.Println(Yellow,"URL Required OR Invalid URL",Reset)
-				fmt.Println(Red,"Usage: gohunter -u <https://example.com>",Reset)
-				os.Exit(0)
-			}
-			if os.Args[3] == "-w" || os.Args[3] == "--wordlist"{
-				if len(os.Args) <= 4 || os.Args[4] == ""{
-					fmt.Println(Red,"NO WORDLIST DETECTED",Reset)
-					os.Exit(0)
-				}
-			}
-				wg.Add(1)
-				go func(){
-					defer wg.Done()
-					fmt.Println("")
-					simple(&wg)
-				}()
-		}
-	}else if len(os.Args) <=  7 {
-		if os.Args[1] == "-u" || os.Args[1] == "--url" {
-			if os.Args[3] == "-o" || os.Args[3] == "--output"{
-				if len(os.Args) <= 5 || os.Args[4] == ""{
-					fmt.Println(Red,"EMPTY OUTPUT FILENAME",Reset)
-					fmt.Println(Red,"NO WORDLIST DETECTED",Reset)
-					fmt.Println(Red,"Usage: gohunter -u <https://example.com> -o <Output> -w <Wordlist Path>",Reset)
-					os.Exit(0)
-				}
-			if os.Args[5] == "-w" || os.Args[5] == "--wordlist"{
-				if len(os.Args) <= 6 || os.Args[6] == "" {
-					fmt.Println(Red,"INVALID COMMAND FORMAT",Reset)
-					fmt.Println(Red,"Usage: gohunter -u <https://example.com> -o <Output> -w <Wordlist Path>",Reset)
-					os.Exit(0)
-				}
-				wg.Add(1)
-				go func(){
-					defer wg.Done()
-					fmt.Println("")
-					simpleoutput(&wg)
-					
-				}()
-			}
-		}
-	}
-		if os.Args[3] == "-d" || os.Args[3] == "--delay"{
-			if len(os.Args) <= 5 || os.Args[4] == ""{
-				fmt.Println(Red,"INVALID COMMAND FORMAT",Reset)
-				fmt.Println(Red,"Usage: gohunter -u <https://example.com> -d <delay_time> -w <Wordlist Path>",Reset)
-				os.Exit(0)
-			}
-				if os.Args[5] == "-w" || os.Args[5] == "--wordlist"{
-					if len(os.Args) <= 6 || os.Args[6] == "" {
-						fmt.Println(Red,"NO WORDLIST DETECTED",Reset)
-						fmt.Println(Red,"Usage: gohunter -u <https://example.com> -d <delay_time> -w <Wordlist Path>",Reset)
-						os.Exit(0)
-			}
-				wg.Add(1)
-				go func(){
-					defer wg.Done()
-					fmt.Println("")
-					delay(&wg)
-				}()
-		}
-	}
-	}else if len(os.Args) <= 9 {
-		if os.Args[1] == "-u" || os.Args[1] == "--url" {
-			if os.Args[3] == "-d" || os.Args[3] == "--delay" {
-				if os.Args[5] == "-o" || os.Args[5] == "--output" {
-					if len(os.Args) <= 7 || os.Args[6] == ""{
-						fmt.Println(Red,"EMPTY OUTPUT FILENAME",Reset)
-						fmt.Println(Red,"NO WORDLIST DETECTED",Reset)
-						os.Exit(0)
-					}
-				if os.Args[7] == "-w" || os.Args[7] == "--wordlist"{
-					if len(os.Args) <= 8 || os.Args[8] == "" {
-						fmt.Println(Red,"NO WORDLIST DETECTED",Reset)
-						fmt.Println(Red,"Usage: gohunter -u <https://example.com> -d <delay_time> -o <Output> -w <Wordlist Path>",Reset)
-						os.Exit(0)
-					}
-				wg.Add(1)
-				go func(){
-					defer wg.Done()
-					fmt.Println("")
-					output(&wg)
-				}()
-				}
-			}
-		}	
-	}
-	}else{
-		fmt.Println(Red,"INVALID COMMAND FORMAT",Reset)
-		fmt.Println("Usage: gohunter -u <https://example.com> -d <delay_time> -o <Output> -w <Wordlist Path>")
+		fmt.Println(Red, "Usage: gohunter -h", Reset)
 		os.Exit(1)
 	}
 
+	if os.Args[1] == "--help" || os.Args[1] == "-h" {
+		printHelp()
+		return
+	}
+
+	validateArgs(5, "Usage: gohunter -u <https://example.com> -w <Wordlist>")
+
+	baseURL := ""
+	wordlistPath := ""
+	delayTime := 0
+	outputFile := ""
+
+	// Parse arguments
+	for i := 1; i < len(os.Args); i++ {
+		switch os.Args[i] {
+		case "-u", "--url":
+			validateArgs(i+1, "URL is required.")
+			baseURL = os.Args[i+1]
+			i++
+		case "-w", "--wordlist":
+			validateArgs(i+1, "Wordlist path is required.")
+			wordlistPath = os.Args[i+1]
+			i++
+		case "-d", "--delay":
+			validateArgs(i+1, "Delay time is required.")
+			delayTime, _ = strconv.Atoi(os.Args[i+1])
+			i++
+		case "-o", "--output":
+			validateArgs(i+1, "Output file name is required.")
+			outputFile = os.Args[i+1]
+			i++
+		}
+	}
+
+	// Validate base URL
+	if _, err := url.ParseRequestURI(baseURL); err != nil {
+		fmt.Println(Red, "Invalid URL provided.", Reset)
+		os.Exit(1)
+	}
+
+	// Validate wordlist file
+	if _, err := os.Stat(wordlistPath); os.IsNotExist(err) {
+		fmt.Println(Red, "Wordlist file not found.", Reset)
+		os.Exit(1)
+	}
+
+	// Start scanning
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		scanDirectories(baseURL, wordlistPath, delayTime, outputFile)
+	}()
 	wg.Wait()
 }
 
-
-//==============================================================================================================================================================================================================
-
-func simple(wg *sync.WaitGroup) {
-	wordlist := os.Args[4]
-	file, err := os.Open(wordlist)
+func scanDirectories(baseURL, wordlistPath string, delay int, outputFile string) {
+	wordlist, err := os.Open(wordlistPath)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(Red, "Error opening wordlist:", err, Reset)
 		return
 	}
-	defer file.Close()
+	defer wordlist.Close()
 
-	fmt.Println(Red,"///////////////////////////////////////////////////////////////////////////////////",Reset)
-	fmt.Println("===================================================================================")
-	fmt.Println(Yellow,Bold,"				DIRECTORY FINDER				  ",Reset)
-	fmt.Println("===================================================================================")
-	fmt.Println(Red,"///////////////////////////////////////////////////////////////////////////////////",Reset)
-	fmt.Println("")
-	fmt.Println(Blue,"NORMAL SCAN!",Reset)
-	fmt.Println("------------------------------------------------------------------------------------")
-	read := bufio.NewScanner(file)
-
-	for read.Scan() {
-		reade := read.Text()
-		base := os.Args[2]
-
-		if base == "" {
-			fmt.Println("Invalid or Empty URL")
-			break
-		}
-
-		baseURL := base + "/" + reade
-
-		create, err := http.Get(baseURL)
+	var fileWriter *bufio.Writer
+	if outputFile != "" {
+		output, err := os.OpenFile(outputFile+".txt", os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			fmt.Println("Sending Request Error")
+			fmt.Println(Red, "Error creating output file:", err, Reset)
+			return
+		}
+		defer output.Close()
+		fileWriter = bufio.NewWriter(output)
+		defer fileWriter.Flush()
+	}
+
+	scanner := bufio.NewScanner(wordlist)
+	fmt.Println("--------------------------------------------------------------------------------")
+	fmt.Println(Yellow, Bold, "Starting Directory Finder Scan", Reset)
+	fmt.Println("")
+	fmt.Println("Target:", baseURL)
+	fmt.Println("--------------------------------------------------------------------------------")
+
+	for scanner.Scan() {
+		path := scanner.Text()
+		fullURL := fmt.Sprintf("%s/%s", baseURL, path)
+
+		resp, err := http.Head(fullURL)
+		if err != nil {
+			fmt.Printf("%sError requesting %s: %v%s\n", Red, fullURL, err, Reset)
 			continue
 		}
-		defer create.Body.Close()
+		defer resp.Body.Close()
 
-		blue := "\x1b[34m"
-		red := "\x1b[31m"
-		green := "\x1b[32m"
-		reset := "\x1b[0m"
+		statusColor := getStatusColor(resp.StatusCode)
+		fmt.Printf("%s%s | [%d]%s\n", statusColor, fullURL, resp.StatusCode, Reset)
 
-		var statusMessage string
-
-		if create.StatusCode == 200 {
-			statusMessage = fmt.Sprintf("%v%s | [%d]%v\n", green, create.Request.URL, create.StatusCode, reset)
-		} else if create.StatusCode == 404 {
-			statusMessage = fmt.Sprintf("%v%s | [%d]%v\n", red, create.Request.URL, create.StatusCode, reset)
-		} else {
-			statusMessage = fmt.Sprintf("%v%s | [%d]%v\n", blue, create.Request.URL, create.StatusCode, reset)
+		if fileWriter != nil {
+			fileWriter.WriteString(fmt.Sprintf("%s | [%d]\n", fullURL, resp.StatusCode))
 		}
-		fmt.Printf("%s",statusMessage)
+
+		if delay > 0 {
+			time.Sleep(time.Duration(delay) * time.Second)
+		}
 	}
 
-	fmt.Println("===========================================================")
-	fmt.Println(Cyan,"    		Done Scanning Directories!",Reset)
-	fmt.Println("===========================================================")
+	if err := scanner.Err(); err != nil {
+		fmt.Println(Red, "Error reading wordlist:", err, Reset)
+	}
+	fmt.Println(Cyan, "Scan completed.", Reset)
 }
 
-//==============================================================================================================================================================================================================
-
-func delay(wg *sync.WaitGroup) {
-	wordlist := os.Args[6]
-	file, err := os.Open(wordlist)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer file.Close()
-
-	fmt.Println(Red,"///////////////////////////////////////////////////////////////////////////////////",Reset)
-	fmt.Println("===================================================================================")
-	fmt.Println(Yellow,Bold,"				DIRECTORY FINDER				  ",Reset)
-	fmt.Println("===================================================================================")
-	fmt.Println(Red,"///////////////////////////////////////////////////////////////////////////////////",Reset)
-	fmt.Println("")
-	fmt.Println(Blue,"DELAY NORMAL SCAN!",Reset)
-	fmt.Println("------------------------------------------------------------------------------------")
-	read := bufio.NewScanner(file)
-	delayTime, _ := strconv.Atoi(os.Args[4])
-
-	for read.Scan() {
-		reade := read.Text()
-		base := os.Args[2]
-
-		if base == "" {
-			fmt.Println("Invalid or Empty URL")
-			break
-		}
-
-		baseURL := base + "/" + reade
-
-		create, err := http.Get(baseURL)
-		if err != nil {
-			fmt.Println("Error while sending request")
-			continue
-		}
-		defer create.Body.Close()
-
-		blue := "\x1b[34m"
-		red := "\x1b[31m"
-		green := "\x1b[32m"
-		reset := "\x1b[0m"
-
-		var statusMessage string
-
-		if create.StatusCode == 200 {
-			statusMessage = fmt.Sprintf("%v%s | [%d]%v\n", green, create.Request.URL, create.StatusCode, reset)
-		} else if create.StatusCode == 404 {
-			statusMessage = fmt.Sprintf("%v%s | [%d]%v\n", red, create.Request.URL, create.StatusCode, reset)
-		} else {
-			statusMessage = fmt.Sprintf("%v%s | [%d]%v\n", blue, create.Request.URL, create.StatusCode, reset)
-		}
-		fmt.Printf("%s",statusMessage)
-
-		time.Sleep(time.Duration(delayTime) * time.Second)
-	}
-
-	fmt.Println("===========================================================")
-	fmt.Println(Cyan,"		Done Scanning Directories!",Reset)
-	fmt.Println("===========================================================")
-}
-
-//==============================================================================================================================================================================================================
-
-
-func simpleoutput(wg *sync.WaitGroup) {
-	arg := os.Args[4] + ".txt"
-	createFile, err := os.OpenFile(arg, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer createFile.Close()
-
-	wordlist := os.Args[6]
-	file, err := os.Open(wordlist)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer file.Close()
-	fmt.Println(Red,"///////////////////////////////////////////////////////////////////////////////////",Reset)
-	fmt.Println("===================================================================================")
-	fmt.Println(Yellow,Bold,"				DIRECTORY FINDER				  ",Reset)
-	fmt.Println("===================================================================================")
-	fmt.Println(Red,"///////////////////////////////////////////////////////////////////////////////////",Reset)
-	fmt.Println("")
-	fmt.Println(Blue,"NORMAL SCAN WITH OUTPUT OPTION!",Reset)
-	fmt.Println("------------------------------------------------------------------------------------")
-	
-	read := bufio.NewScanner(file)
-
-	for read.Scan() {
-		reade := read.Text()
-		base := os.Args[2]
-
-		if base == "" {
-			fmt.Println("Invalid or Empty URL")
-			break
-		}
-
-		baseURL := base + "/" + reade
-
-		create, err := http.Get(baseURL)
-		if err != nil {
-			fmt.Println("Error while sending request")
-			continue
-		}
-		defer create.Body.Close()
-
-		blue := "\x1b[34m"
-		red := "\x1b[31m"
-		green := "\x1b[32m"
-		reset := "\x1b[0m"
-
-		var statusMessage string
-		var result string
-
-		if create.StatusCode == 200 {
-			statusMessage = fmt.Sprintf("%v%s | [%d]%v\n", green, create.Request.URL, create.StatusCode, reset)
-			result = fmt.Sprintln(create.Request.URL,"|", "[",create.StatusCode,"]")
-		} else if create.StatusCode == 404 {
-			statusMessage = fmt.Sprintf("%v%s | [%d]%v\n", red, create.Request.URL, create.StatusCode, reset)
-			result = fmt.Sprintln(create.Request.URL,"|", "[",create.StatusCode,"]")
-		} else {
-			statusMessage = fmt.Sprintf("%v%s | [%d]%v\n", blue, create.Request.URL, create.StatusCode, reset)
-			result = fmt.Sprintln(create.Request.URL,"|", "[",create.StatusCode,"]")
-		}
-
-		fmt.Printf("%s",statusMessage)
-
-		// Write to file
-		writer := bufio.NewWriter(createFile)
-		
-		writer.WriteString(result)
-		writer.Flush()
-	}
-	fmt.Println("===========================================================")
-	fmt.Println(Cyan,"	  Done Scanning Directories!",Reset)
-	fmt.Println(Cyan,"		RESULT SAVED",Reset)
-	fmt.Println("===========================================================")
-
-	if err := read.Err(); err != nil {
-		fmt.Println("Error reading file:", err)
+func getStatusColor(statusCode int) string {
+	switch {
+	case statusCode >= 200 && statusCode < 300:
+		return Green
+	case statusCode >= 300 && statusCode < 400:
+		return Blue
+	case statusCode >= 400 && statusCode < 500:
+		return Purple
+	case statusCode >= 500:
+		return Red
+	default:
+		return Cyan
 	}
 }
-
-//==============================================================================================================================================================================================================
-
-
-func output(wg *sync.WaitGroup) {
-	arg := os.Args[6] + ".txt"
-	createFile, err := os.OpenFile(arg, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer createFile.Close()
-
-	wordlist := os.Args[8]
-	file, err := os.Open(wordlist)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer file.Close()
-	fmt.Println(Red,"///////////////////////////////////////////////////////////////////////////////////",Reset)
-	fmt.Println("===================================================================================")
-	fmt.Println(Yellow,Bold,"				DIRECTORY FINDER				  ",Reset)
-	fmt.Println("===================================================================================")
-	fmt.Println(Red,"///////////////////////////////////////////////////////////////////////////////////",Reset)
-	fmt.Println("")
-	fmt.Println(Blue,"SCAN WITH DELAY & OUTPUT OPTION!",Reset)
-	fmt.Println("------------------------------------------------------------------------------------")
-	
-	
-	read := bufio.NewScanner(file)
-	delayTime, _ := strconv.Atoi(os.Args[4])
-
-	for read.Scan() {
-		reade := read.Text()
-		base := os.Args[2]
-
-		if base == "" {
-			fmt.Println("Invalid or Empty URL")
-			break
-		}
-
-		baseURL := base + "/" + reade
-
-		create, err := http.Get(baseURL)
-		if err != nil {
-			fmt.Println("Error while sending request")
-			continue
-		}
-		defer create.Body.Close()
-
-		blue := "\x1b[34m"
-		red := "\x1b[31m"
-		green := "\x1b[32m"
-		reset := "\x1b[0m"
-
-		var statusMessage string
-		var result string
-
-		if create.StatusCode == 200 {
-			statusMessage = fmt.Sprintf("%v%s | [%d]%v\n", green, create.Request.URL, create.StatusCode, reset)
-			result = fmt.Sprintln(create.Request.URL,"|", "[",create.StatusCode,"]")
-		} else if create.StatusCode == 404 {
-			statusMessage = fmt.Sprintf("%v%s | [%d]%v\n", red, create.Request.URL, create.StatusCode, reset)
-			result = fmt.Sprintln(create.Request.URL,"|", "[",create.StatusCode,"]")
-		} else {
-			statusMessage = fmt.Sprintf("%v%s | [%d]%v\n", blue, create.Request.URL, create.StatusCode, reset)
-			result = fmt.Sprintln(create.Request.URL,"|", "[",create.StatusCode,"]")
-		}
-
-		fmt.Printf("%s",statusMessage)
-
-		time.Sleep(time.Duration(delayTime) * time.Second)
-
-		// Write to file
-		writer := bufio.NewWriter(createFile)
-		
-		writer.WriteString(result)
-		writer.Flush()
-	}
-	fmt.Println("===========================================================")
-	fmt.Println(Cyan,"	  Done Scanning Directories!",Reset)
-	fmt.Println(Cyan,"		RESULT SAVED",Reset)
-	fmt.Println("===========================================================")
-
-	if err := read.Err(); err != nil {
-		fmt.Println("Error reading file:", err)
-	}
-}
-
-
